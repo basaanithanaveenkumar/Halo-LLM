@@ -49,9 +49,21 @@ def test_stride_words_must_be_positive():
         pass
 
 
-def test_passage_prompt_takes_prefix():
-    from ha_llm.dataloader.dataset import _is_heading, dataset_prompt, passage_prompt
+def test_uses_overfit_from_source_or_text():
     from ha_llm.config.schema import RunConfig
+    from ha_llm.dataloader.dataset import uses_overfit
+
+    hf = RunConfig(variant="autoregressive", data={"source": "huggingface", "overfit_text": None})
+    assert not uses_overfit(hf)
+    text = RunConfig(variant="autoregressive", data={"overfit_text": "hello world"})
+    assert uses_overfit(text)
+    src = RunConfig(variant="autoregressive", data={"source": "overfit", "overfit_text": "hello"})
+    assert uses_overfit(src)
+
+
+def test_passage_prompt_takes_prefix():
+    from ha_llm.config.schema import RunConfig
+    from ha_llm.dataloader.dataset import _is_heading, dataset_prompt, passage_prompt
 
     assert _is_heading("= Game =")
     assert not _is_heading("The game was released in 1991.")

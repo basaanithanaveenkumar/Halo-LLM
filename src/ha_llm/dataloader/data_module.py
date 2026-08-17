@@ -1,12 +1,14 @@
-"""Build train/val loaders from config. Trainer depends on this, not on WikiText details."""
+"""Build train/val loaders from config. Trainer depends on this, not on Hub details."""
 
 from __future__ import annotations
 
 from torch.utils.data import DataLoader
 
 from ha_llm.config.schema import RunConfig
-from ha_llm.dataloader.collate import make_overfit_loader, setup_tokenizer
-from ha_llm.dataloader.dataset import collect_dataset_passages, dataset_prompt, make_dataloader
+from ha_llm.dataloader.loaders import make_dataloader
+from ha_llm.dataloader.prompts import collect_dataset_passages, dataset_prompt
+from ha_llm.dataloader.sources.overfit import make_overfit_loader, uses_overfit
+from ha_llm.dataloader.tokenizer import setup_tokenizer
 from loguru import logger
 
 
@@ -25,8 +27,10 @@ class DataModule:
 
     def train_loader(self) -> DataLoader:
         cfg = self.cfg
-        if cfg.data.overfit_text:
-            logger.warning("overfit mode enabled; WikiText loader is bypassed")
+        if uses_overfit(cfg):
+            if not cfg.data.overfit_text:
+                raise ValueError("data.source=overfit requires data.overfit_text")
+            logger.warning("overfit mode enabled; HuggingFace loader is bypassed")
             logger.debug("overfit_text={!r} copies={}", cfg.data.overfit_text, cfg.data.n_overfit_copies)
             return make_overfit_loader(
                 cfg.variant,
@@ -39,7 +43,7 @@ class DataModule:
         return make_dataloader(cfg, split="train")
 
     def val_loader(self, train_loader: DataLoader | None = None) -> DataLoader:
-        if self.cfg.data.overfit_text:
+        if uses_overfit(self.cfg):
             if train_loader is None:
                 return self.train_loader()
             return train_loader

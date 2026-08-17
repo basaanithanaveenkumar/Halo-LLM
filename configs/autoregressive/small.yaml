@@ -11,8 +11,14 @@ train:
   batch_size: 32
   lr: 0.0003
 data:
+  source: huggingface
+  dataset: Salesforce/wikitext
+  subset: wikitext-2-raw-v1
+  train_split: train
+  val_split: validation
   train_size: null
   val_size: null
+  stride_words: 10
   overfit_text: null
 eval:
   every_n_epochs: 10

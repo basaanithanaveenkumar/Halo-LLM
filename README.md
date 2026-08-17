@@ -25,14 +25,15 @@ Compare **autoregressive**, **masked diffusion**, **block diffusion**, and **flo
 
 ## Why this repo
 
-The same `TransformerBackbone` is reused for every paradigm. Masking, attention mechanism, and FFN are config switches — not forked model files. Train, sample, eval, and visualize through one CLI.
+The decoder is a small library: **components** (attention, FFN, layers), **transformer stacks** that run on hidden states `(B, S, D)` for a VLM or world model, and **token backbones** that map ids → logits. Masking, attention, FFN, and `arch` are config switches. Train, sample, eval, and visualize through one CLI. Details: [docs/core.md](docs/core.md).
 
 | Switch | Options |
 |---|---|
 | Variant | `autoregressive` · `diffusion` · `block_diffusion` · `flow_matching` · `mtp` (stub) |
 | Attention mask | `causal` · `bidirectional` · `block_causal` |
 | Attention impl | `mha` · `gqa` · `mqa` |
-| FFN | `mlp` · DeepSeek-style `moe` |
+| Backbone | `transformer` (GPT-style) · `lgt` (local/global + dual RoPE) · `dit` (AdaLN-Zero) |
+| FFN | `mlp` · `geglu` · DeepSeek-style `moe` |
 | Token loss | `ce` · `focal` |
 
 Shared core (`core/`, `dataloader/`, `training/`, `inference/`, `metrics/`) never imports a `models_*` package by name. Each paradigm lives in `src/ha_llm/models/models_<name>/` and registers with `@register_model` / `@register_loss` / `@register_sampler` / `@register_metric`.
@@ -74,7 +75,7 @@ tensorboard --logdir data/experiments
 | [`configs/flow_matching/small.yaml`](configs/flow_matching/small.yaml) | Discrete flow matching |
 | [`configs/mtp/small.yaml`](configs/mtp/small.yaml) | Multi-token heads (stub) |
 
-Default small model: `d_model=384`, 16 layers, 8 heads, `d_ff=1536`, `max_length=128`, GPT-2 tokenizer, WikiText-2 with a **10-word sliding stride**.
+Default small model: `d_model=384`, 16 layers, 8 heads, `d_ff=1536`, `max_length=128`, GPT-2 tokenizer, WikiText-2 with a **10-word sliding stride**. Diffusion, block diffusion, and flow matching use **LGT** (`arch: lgt`, local-global transformer). Autoregressive stays on `transformer`.
 
 ---
 
@@ -98,25 +99,45 @@ Training GIFs write every `viz.every_n_steps` (default 50) using a short sampler
 
 ---
 
-## Config knobs
+## Configuration
 
-Set these in [`configs/base.yaml`](configs/base.yaml) or a variant YAML:
+YAML files under `configs/` are the source of truth. [`configs/base.yaml`](configs/base.yaml) holds shared size, data, and logging. Each variant file sets `inherits: ../base.yaml` and overrides only what that paradigm needs (`variant`, attention mask, `arch`, `block_size`).
+
+Unknown keys are rejected. After a run, the merged file is saved as `data/experiments/<variant>/<run>/config.yaml`.
+
+**High-level map**
+
+| Section | Role |
+|---|---|
+| `variant` | Which model/loss/sampler (`autoregressive`, `diffusion`, `block_diffusion`, `flow_matching`, `mtp`) |
+| `model` | Width/depth, `arch` (`transformer` \| `lgt` \| `dit`), mask (`causal` \| `bidirectional` \| `block_causal`), FFN, time cond |
+| `train` | `epochs` or `steps`, `batch_size`, `lr`, `loss_type`, resume |
+| `data` | Hugging Face dataset (`Salesforce/wikitext` + `subset`) or `overfit_text`; `train_size: null` means the **full** split |
+| `sample` / `eval` / `viz` | Generation length, metrics, GIF cadence |
+| `device` | `mps`, `cuda`, or `cpu` |
+
+**Typical edits**
 
 ```yaml
-model:
-  attn_impl: mha          # mha | gqa | mqa
-  ffn_type: mlp           # mlp | moe
-train:
-  loss_type: ce           # ce | focal
-  focal_gamma: 2.0
+# WikiText-2, full split (null = no row cap)
 data:
-  stride_words: 10
-viz:
-  every_n_steps: 50
-  sampling_steps: 8
-  prompt_source: dataset
-device: mps               # or cuda / cpu
+  dataset: Salesforce/wikitext
+  subset: wikitext-2-raw-v1
+  train_size: null
+
+# Swap LGT for DiT on a denoiser
+model:
+  arch: dit
+
+# Faster laptop run
+train:
+  batch_size: 8
+  epochs: 2
+data:
+  train_size: 512
 ```
+
+Every key, type, default, and recipe: **[docs/config.md](docs/config.md)**.
 
 ---
 

@@ -27,12 +27,18 @@ train:
   focal_gamma: 2.0
   focal_alpha: 1.0
 data:
+  source: huggingface
+  dataset: Salesforce/wikitext
+  subset: wikitext-2-raw-v1
+  train_split: train
+  val_split: validation
+  text_field: text
+  cache_dir: null
   tokenizer_name: gpt2
   train_size: null
   val_size: null
-  overfit_text: null
-  n_overfit_copies: 64
   stride_words: 10
+  overfit_text: null
   n_overfit_copies: 64
 sample:
   max_new_tokens: 64

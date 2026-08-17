@@ -5,7 +5,7 @@ import torch
 import ha_llm.models  # noqa: F401
 from ha_llm.config.schema import RunConfig
 from ha_llm.core.registry import instantiate_metrics
-from ha_llm.evaluation.eval_loop import evaluate
+from ha_llm.evaluation import evaluate
 from ha_llm.metrics import LossMetric, MetricContext, PerplexityMetric, TokenAccuracyMetric
 
 
@@ -72,7 +72,7 @@ def test_evaluate_returns_dict(tiny_tokenizer):
         device="cpu",
     )
     from ha_llm.core.registry import get_variant
-    from ha_llm.dataloader.collate import make_overfit_loader
+    from ha_llm.dataloader import make_overfit_loader
 
     model = get_variant("autoregressive")(vocab_size=len(tiny_tokenizer), cfg=cfg)
     loader = make_overfit_loader(

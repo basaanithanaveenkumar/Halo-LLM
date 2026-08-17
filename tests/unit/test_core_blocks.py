@@ -1,8 +1,8 @@
 import torch
 
-from ha_llm.core.blocks.attention import build_attention, build_attn_mask
-from ha_llm.core.blocks.ffn import build_ffn
-from ha_llm.core.transformer import TransformerBackbone
+from ha_llm.core.backbones import TransformerBackbone
+from ha_llm.core.components.attention import build_attention, build_attn_mask
+from ha_llm.core.components.ffn import build_ffn
 
 
 def test_gqa_and_mqa_forward():
@@ -19,6 +19,16 @@ def test_moe_forward_shape():
     moe = build_ffn("moe", d_model=16, d_ff=32, moe_num_experts=4, moe_top_k=2, moe_num_shared=1)
     y = moe(x)
     assert y.shape == x.shape
+    assert torch.isfinite(y).all()
+
+
+def test_gpt_stack_hidden_states():
+    from ha_llm.core.transformers import GPTStack
+
+    stack = GPTStack(d_model=16, n_heads=4, n_layers=1, d_ff=32)
+    h = torch.randn(2, 6, 16)
+    y = stack(h)
+    assert y.shape == h.shape
     assert torch.isfinite(y).all()
 
 

@@ -2,7 +2,11 @@ inherits: ../base.yaml
 variant: block_diffusion
 device: mps
 model:
+  arch: lgt            # lgt | dit | transformer
   attn_type: block_causal
+  attn_impl: gqa
+  n_kv_heads: 2
+  ffn_type: geglu
   use_time_cond: true
   block_size: 16
   max_length: 128
@@ -11,10 +15,6 @@ train:
   steps: null
   batch_size: 28
   lr: 0.0003
-data:
-  train_size: null
-  val_size: null
-  overfit_text: null
 eval:
   every_n_epochs: 1
 viz:

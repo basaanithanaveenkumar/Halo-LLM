@@ -12,7 +12,7 @@ from ha_llm.core.checkpoint import CheckpointStore
 from ha_llm.core.registry import get_loss, get_variant
 from ha_llm.core.tensors import count_parameters, log_model_summary, move_batch_to_device
 from ha_llm.dataloader.data_module import DataModule
-from ha_llm.evaluation.eval_loop import Evaluator
+from ha_llm.evaluation.evaluator import Evaluator
 from ha_llm.training.schedule import TrainSchedule, resolve_schedule
 from ha_llm.utils.device import get_device
 from ha_llm.utils.logging import setup_logging

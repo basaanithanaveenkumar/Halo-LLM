@@ -2,7 +2,8 @@ import torch
 
 import ha_llm.models  # noqa: F401
 from ha_llm.core.registry import MODELS, get_model
-from ha_llm.core.transformer import TransformerBackbone, build_attn_mask
+from ha_llm.core.backbones import TransformerBackbone
+from ha_llm.core.components import build_attn_mask
 
 
 def test_registry_has_all_models():

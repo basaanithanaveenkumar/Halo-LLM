@@ -1,9 +1,10 @@
 from ha_llm.metrics.base import Metric, MetricContext
-from ha_llm.metrics.general import (
+from ha_llm.metrics.llm import (
     BitsPerTokenMetric,
     LossMetric,
     PerplexityMetric,
     TokenAccuracyMetric,
+    TopKAccuracyMetric,
 )
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     "PerplexityMetric",
     "BitsPerTokenMetric",
     "TokenAccuracyMetric",
+    "TopKAccuracyMetric",
 ]

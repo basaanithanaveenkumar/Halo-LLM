@@ -7,8 +7,8 @@ from loguru import logger
 
 from ha_llm.config.experiment import apply_experiment_layout
 from ha_llm.config.schema import load_config
-from ha_llm.dataloader.dataset import make_dataloader
-from ha_llm.evaluation.eval_loop import evaluate
+from ha_llm.dataloader import make_dataloader
+from ha_llm.evaluation import evaluate
 from ha_llm.inference import load_session
 from ha_llm.utils.logging import setup_logging
 from ha_llm.utils.tensorboard import log_scalars, make_writer

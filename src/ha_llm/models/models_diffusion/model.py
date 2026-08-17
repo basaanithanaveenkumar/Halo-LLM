@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ha_llm.core.backbones import build_backbone
 from ha_llm.core.registry import register_loss, register_sampler, register_variant
-from ha_llm.core.transformer import TransformerBackbone
 from ha_llm.dataloader.collate import register_collate
 from ha_llm.losses import model_token_nll
 
@@ -25,7 +25,7 @@ def collate_diffusion(input_ids: torch.Tensor, tokenizer, **_):
 class MaskedDiffusionLM(nn.Module):
     def __init__(self, vocab_size: int, cfg):
         super().__init__()
-        self.backbone = TransformerBackbone.from_config(vocab_size, cfg.model)
+        self.backbone = build_backbone(vocab_size, cfg.model)
         self.vocab_size = vocab_size
         self.eps = cfg.sample.eps
         self.cfg = cfg

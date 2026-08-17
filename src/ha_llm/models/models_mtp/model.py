@@ -10,8 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ha_llm.core.backbones import build_backbone
 from ha_llm.core.registry import register_loss, register_sampler, register_variant
-from ha_llm.core.transformer import TransformerBackbone
 from ha_llm.dataloader.collate import register_collate
 from ha_llm.losses import model_token_nll
 
@@ -32,7 +32,7 @@ class MultiTokenPredictionLM(nn.Module):
     def __init__(self, vocab_size: int, cfg):
         super().__init__()
         self.n_heads = cfg.model.n_mtp_heads
-        self.backbone = TransformerBackbone.from_config(
+        self.backbone = build_backbone(
             vocab_size, cfg.model, tie_embeddings=False
         )
         self.extra_heads = nn.ModuleList(

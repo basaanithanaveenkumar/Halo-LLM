@@ -1,16 +1,24 @@
-"""Token-level NLL: standard CE or focal (Lin et al.). Used by every variant loss."""
+"""Dispatch registered token losses. Variant task losses call `model_token_nll`."""
 
 from __future__ import annotations
 
 import torch
-import torch.nn.functional as F
+
+from ha_llm.losses import functions as _token_losses  # noqa: F401
+from ha_llm.losses.reduce import reduce_per_token
+from ha_llm.losses.registry import get_token_loss
 
 
-def loss_settings(model) -> tuple[str, float, float]:
+def loss_settings(model) -> dict:
     train = getattr(getattr(model, "cfg", None), "train", None)
     if train is None:
-        return "ce", 2.0, 1.0
-    return train.loss_type, float(train.focal_gamma), float(train.focal_alpha)
+        return {"loss_type": "ce", "focal_gamma": 2.0, "focal_alpha": 1.0, "label_smoothing": 0.1}
+    return {
+        "loss_type": train.loss_type,
+        "focal_gamma": float(train.focal_gamma),
+        "focal_alpha": float(train.focal_alpha),
+        "label_smoothing": float(getattr(train, "label_smoothing", 0.1)),
+    }
 
 
 def token_nll(
@@ -20,42 +28,18 @@ def token_nll(
     ignore_index: int | None = None,
     reduction: str = "mean",
     loss_type: str = "ce",
-    focal_gamma: float = 2.0,
-    focal_alpha: float = 1.0,
+    **kwargs,
 ) -> torch.Tensor:
-    """Per-token loss, same shape as ``targets`` when ``reduction='none'``.
-
-    Focal: ``alpha * (1 - p_t)^gamma * CE``, with ``p_t = exp(-CE)``.
-    """
-    ce = F.cross_entropy(
-        logits.reshape(-1, logits.size(-1)),
-        targets.reshape(-1),
-        reduction="none",
-        ignore_index=-100 if ignore_index is None else ignore_index,
-    ).reshape_as(targets)
-    if loss_type == "focal":
-        pt = torch.exp(-ce)
-        nll = focal_alpha * (1.0 - pt).clamp(min=0.0).pow(focal_gamma) * ce
-    elif loss_type == "ce":
-        nll = ce
-    else:
-        raise ValueError(f"unknown loss_type {loss_type!r}; expected 'ce' or 'focal'")
-    if reduction == "none":
-        return nll
-    if ignore_index is None:
-        if reduction == "sum":
-            return nll.sum()
-        return nll.mean()
-    valid = targets != ignore_index
-    nll = nll * valid.float()
-    if reduction == "sum":
-        return nll.sum()
-    return nll.sum() / valid.float().sum().clamp(min=1.0)
+    """Per-token loss via `losses.registry` (`ce`, `focal`, `label_smoothing`, `kl`, …)."""
+    ignore = -100 if ignore_index is None else ignore_index
+    nll = get_token_loss(loss_type)(logits, targets, ignore_index=ignore, **kwargs)
+    return reduce_per_token(nll, targets, ignore_index=ignore_index, reduction=reduction)
 
 
 def model_token_nll(model, logits: torch.Tensor, targets: torch.Tensor, **kwargs) -> torch.Tensor:
-    kind, gamma, alpha = loss_settings(model)
+    settings = loss_settings(model)
+    kind = settings.pop("loss_type")
     kwargs.setdefault("loss_type", kind)
-    kwargs.setdefault("focal_gamma", gamma)
-    kwargs.setdefault("focal_alpha", alpha)
+    for key, value in settings.items():
+        kwargs.setdefault(key, value)
     return token_nll(logits, targets, **kwargs)

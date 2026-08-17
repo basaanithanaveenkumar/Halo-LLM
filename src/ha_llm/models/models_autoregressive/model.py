@@ -12,8 +12,8 @@ from __future__ import annotations
 import torch
 import torch.nn as nn
 
+from ha_llm.core.backbones import build_backbone
 from ha_llm.core.registry import register_variant
-from ha_llm.core.transformer import TransformerBackbone
 from ha_llm.dataloader.collate import register_collate
 
 
@@ -38,7 +38,7 @@ def collate_autoregressive(input_ids: torch.Tensor, tokenizer, **_):
 class AutoregressiveLM(nn.Module):
     def __init__(self, vocab_size: int, cfg):
         super().__init__()
-        self.backbone = TransformerBackbone.from_config(vocab_size, cfg.model)
+        self.backbone = build_backbone(vocab_size, cfg.model)
         self.vocab_size = vocab_size
         self.cfg = cfg
 

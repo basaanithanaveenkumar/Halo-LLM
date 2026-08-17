@@ -71,6 +71,5 @@ def log_model_summary(model: nn.Module, *, title: str | None = None) -> str:
     from loguru import logger
 
     text = format_model_summary(model, title=title)
-    print(text, flush=True)
     logger.info("\n{}", text)
     return text

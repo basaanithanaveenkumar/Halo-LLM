@@ -4,8 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from ha_llm.core.backbones import build_backbone
 from ha_llm.core.registry import register_loss, register_sampler, register_variant
-from ha_llm.core.transformer import TransformerBackbone
 from ha_llm.dataloader.collate import register_collate
 from ha_llm.losses import model_token_nll
 
@@ -26,7 +26,7 @@ class BlockDiffusionLM(nn.Module):
     def __init__(self, vocab_size: int, cfg):
         super().__init__()
         block_size = cfg.model.block_size or 16
-        self.backbone = TransformerBackbone.from_config(
+        self.backbone = build_backbone(
             vocab_size, cfg.model, block_size=block_size
         )
         self.vocab_size = vocab_size

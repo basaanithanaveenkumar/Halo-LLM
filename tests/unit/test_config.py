@@ -47,6 +47,11 @@ def test_yaml_inherit():
     assert cfg.train.steps is None
     assert cfg.train.batch_size == 32
     assert cfg.train.resume is False
+    assert cfg.data.source == "huggingface"
+    assert cfg.data.dataset == "Salesforce/wikitext"
+    assert cfg.data.subset == "wikitext-2-raw-v1"
+    assert cfg.data.train_split == "train"
+    assert cfg.data.val_split == "validation"
     assert cfg.data.train_size is None
     assert cfg.data.overfit_text is None
     assert cfg.data.stride_words == 10

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ha_llm.core.blocks.ffn.mlp import DenseMLP
-from ha_llm.core.blocks.ffn.moe import DeepseekMoE
+from ha_llm.core.components.ffn.mlp import DenseMLP, GeGLU
+from ha_llm.core.components.ffn.moe import DeepseekMoE
 from ha_llm.core.registry import NamedRegistry
 
 FFN = NamedRegistry("ffn")
@@ -16,6 +16,7 @@ def register_ffn(name: str):
 
 
 register_ffn("mlp")(DenseMLP)
+register_ffn("geglu")(GeGLU)
 register_ffn("moe")(DeepseekMoE)
 
 
@@ -31,6 +32,8 @@ def build_ffn(
 ):
     if kind == "mlp":
         return FFN.get("mlp")(d_model, d_ff, dropout)
+    if kind == "geglu":
+        return FFN.get("geglu")(d_model, d_ff, dropout)
     if kind == "moe":
         return FFN.get("moe")(
             d_model,

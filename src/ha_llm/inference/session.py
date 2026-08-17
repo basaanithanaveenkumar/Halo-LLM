@@ -13,7 +13,8 @@ from ha_llm.config.schema import RunConfig
 from ha_llm.core.checkpoint import CheckpointStore
 from ha_llm.core.registry import get_sampler, get_variant
 from ha_llm.core.tensors import log_model_summary
-from ha_llm.dataloader.collate import setup_tokenizer
+from ha_llm.dataloader.tokenizer import setup_tokenizer
+from ha_llm.inference.encode import encode_prompt
 from ha_llm.utils.device import get_device
 
 
@@ -47,16 +48,7 @@ class InferenceSession:
         sampling_steps = sampling_steps if sampling_steps is not None else self.cfg.sample.sampling_steps
         sampler = get_sampler(self.cfg.variant)
         self.model.eval()
-        encode_kw: dict[str, Any] = {
-            "return_tensors": "pt",
-            "add_special_tokens": False,
-            "padding": False,
-            "truncation": True,
-        }
-        backbone = getattr(self.model, "backbone", None)
-        if backbone is not None and hasattr(backbone, "max_length"):
-            encode_kw["max_length"] = backbone.max_length
-        ids = self.tokenizer(prompt, **encode_kw)["input_ids"].to(self.device)
+        ids = encode_prompt(self.tokenizer, prompt, self.model, self.device)
         logger.info("inference variant={} prompt={!r} return_history={}", self.cfg.variant, prompt, return_history)
         out = sampler(
             self.model,

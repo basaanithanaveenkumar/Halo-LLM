@@ -1,7 +1,4 @@
-"""Composable transformer sub-blocks. Core never imports models_*."""
+"""Compatibility shim. Prefer `ha_llm.core.components`."""
 
-from ha_llm.core.blocks.attention import build_attention, build_attn_mask
-from ha_llm.core.blocks.ffn import build_ffn
-from ha_llm.core.blocks.layer import TransformerLayer
-
-__all__ = ["build_attention", "build_attn_mask", "build_ffn", "TransformerLayer"]
+from ha_llm.core.components import *  # noqa: F403
+from ha_llm.core.components import __all__

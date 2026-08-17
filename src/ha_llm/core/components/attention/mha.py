@@ -16,6 +16,7 @@ class TorchMultiHeadAttention(nn.Module):
         x: torch.Tensor,
         attn_mask: torch.Tensor | None = None,
         key_padding_mask: torch.Tensor | None = None,
+        positions: torch.Tensor | None = None,
     ) -> torch.Tensor:
         out, _ = self.attn(
             x, x, x, attn_mask=attn_mask, key_padding_mask=key_padding_mask, need_weights=False

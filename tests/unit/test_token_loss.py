@@ -4,6 +4,18 @@ from ha_llm.config.schema import RunConfig
 from ha_llm.losses.token import model_token_nll, token_nll
 
 
+def test_label_smoothing_is_registered():
+    from ha_llm.losses import TOKEN_LOSSES, token_nll
+
+    assert set(TOKEN_LOSSES) >= {"ce", "focal", "label_smoothing", "kl"}
+    logits = torch.randn(1, 3, 5)
+    targets = torch.tensor([[1, 2, 0]])
+    ce = token_nll(logits, targets, reduction="none", loss_type="ce")
+    sm = token_nll(logits, targets, reduction="none", loss_type="label_smoothing", label_smoothing=0.1)
+    assert sm.shape == ce.shape
+    assert torch.isfinite(sm).all()
+
+
 def test_focal_downweights_easy_examples():
     logits = torch.zeros(1, 2, 3)
     logits[0, 0, 1] = 8.0

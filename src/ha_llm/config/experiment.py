@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 from loguru import logger
 
-from ha_llm.config.schema import RunConfig
+from ha_llm.config.run import RunConfig
 
 
 def variant_root(cfg: RunConfig) -> Path:

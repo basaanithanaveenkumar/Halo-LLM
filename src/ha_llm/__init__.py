@@ -1,3 +1,3 @@
-"""ha-llm: compare language-model paradigms on a shared transformer backbone."""
+"""ha-llm: decoder stacks, token losses, LLM metrics, and training plugins."""
 
 __version__ = "0.1.0"
