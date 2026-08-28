@@ -1,6 +1,6 @@
 <div align="center">
 
-# ha-llm
+# HALE-LLM
 
 Compare **autoregressive**, **masked diffusion**, **block diffusion**, and **flow matching** on one transformer backbone.
 
