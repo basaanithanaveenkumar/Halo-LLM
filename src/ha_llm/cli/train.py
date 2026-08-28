@@ -48,6 +48,43 @@ def main() -> None:
         action="store_false",
         help="Disable GIFs during training",
     )
+    
+    # Logging arguments
+    tb = p.add_mutually_exclusive_group()
+    tb.add_argument(
+        "--tensorboard",
+        dest="tensorboard",
+        action="store_true",
+        default=None,
+        help="Enable TensorBoard logging",
+    )
+    tb.add_argument(
+        "--no-tensorboard",
+        dest="tensorboard",
+        action="store_false",
+        help="Disable TensorBoard logging",
+    )
+    
+    wandb_group = p.add_mutually_exclusive_group()
+    wandb_group.add_argument(
+        "--wandb",
+        dest="wandb",
+        action="store_true",
+        default=None,
+        help="Enable Weights & Biases logging",
+    )
+    wandb_group.add_argument(
+        "--no-wandb",
+        dest="wandb",
+        action="store_false",
+        help="Disable Weights & Biases logging",
+    )
+    
+    p.add_argument("--wandb-project", default=None, help="W&B project name")
+    p.add_argument("--wandb-entity", default=None, help="W&B entity (username or team)")
+    p.add_argument("--wandb-run-name", default=None, help="W&B run name")
+    p.add_argument("--wandb-tags", nargs="+", default=None, help="W&B tags for the run")
+    
     args = p.parse_args()
     try:
         cfg = load_config(args.config)
@@ -63,6 +100,21 @@ def main() -> None:
             cfg.train.resume = args.resume
         if args.viz_enabled is not None:
             cfg.viz.enabled = args.viz_enabled
+        
+        # Logging overrides
+        if args.tensorboard is not None:
+            cfg.logging.tensorboard = args.tensorboard
+        if args.wandb is not None:
+            cfg.logging.wandb = args.wandb
+        if args.wandb_project is not None:
+            cfg.logging.wandb_project = args.wandb_project
+        if args.wandb_entity is not None:
+            cfg.logging.wandb_entity = args.wandb_entity
+        if args.wandb_run_name is not None:
+            cfg.logging.wandb_run_name = args.wandb_run_name
+        if args.wandb_tags is not None:
+            cfg.logging.wandb_tags = args.wandb_tags
+        
         apply_experiment_layout(cfg, create=True, name=args.experiment)
         setup_logging(level=cfg.logging.level, log_file=cfg.logging.log_file, force=True)
         logger.info(
