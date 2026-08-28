@@ -1,0 +1,25 @@
+inherits: ../base.yaml
+variant: block_diffusion
+device: mps
+model:
+  arch: lgt            # lgt | dit | transformer
+  d_model: 192
+  n_heads: 4
+  n_layers: 8
+  d_ff: 768
+  attn_type: block_causal
+  attn_impl: gqa
+  n_kv_heads: 2
+  ffn_type: geglu
+  use_time_cond: true
+  block_size: 16
+  max_length: 128
+train:
+  epochs: 2000
+  steps: null
+  batch_size: 56
+  lr: 0.0003
+eval:
+  every_n_epochs: 1
+viz:
+  every_n_steps: 50

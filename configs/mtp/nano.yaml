@@ -1,0 +1,21 @@
+inherits: ../base.yaml
+variant: mtp
+device: mps
+model:
+  d_model: 192
+  n_heads: 4
+  n_layers: 8
+  d_ff: 768
+  attn_type: causal
+  use_time_cond: false
+  n_mtp_heads: 5
+  max_length: 128
+train:
+  epochs: 2000
+  steps: null
+  batch_size: 64
+  lr: 0.0003
+eval:
+  every_n_epochs: 10
+viz:
+  every_n_steps: 500

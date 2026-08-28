@@ -13,10 +13,18 @@ from ha_llm.core.registry import get_loss, get_variant
 from ha_llm.core.tensors import count_parameters, log_model_summary, move_batch_to_device
 from ha_llm.dataloader.data_module import DataModule
 from ha_llm.evaluation.evaluator import Evaluator
+from ha_llm.training.distributed import (
+    DistributedConfig,
+    cleanup_distributed,
+    is_main_process,
+    reduce_dict,
+    setup_distributed,
+    wrap_model_parallel,
+)
 from ha_llm.training.schedule import TrainSchedule, resolve_schedule
 from ha_llm.utils.device import get_device
+from ha_llm.utils.experiment_logger import ExperimentLogger, make_experiment_logger
 from ha_llm.utils.logging import setup_logging
-from ha_llm.utils.tensorboard import log_hparams, log_scalars, make_writer
 
 
 class Trainer:
@@ -33,17 +41,35 @@ class Trainer:
         self._tokenizer = tokenizer
         self.data = data_module
         self.checkpoints = checkpoints or CheckpointStore()
-        self.device = get_device(cfg.device)
+        
+        # Initialize distributed training
+        self.dist_config = setup_distributed(
+            strategy=cfg.train.parallel_strategy,
+            backend=cfg.train.distributed_backend,
+        )
+        
+        # Set device (may be overridden by distributed setup)
+        self.device = self._get_device(cfg.device)
+        
         self.tokenizer = tokenizer
         self.evaluator = evaluator
         self.model = None
         self.opt = None
         self.loss_fn = None
-        self.writer = None
+        self.logger: ExperimentLogger | None = None
         self.losses: list[float] = []
         self.global_step = 0
         self.start_epoch = 0
         self.schedule: TrainSchedule | None = None
+    
+    def _get_device(self, device_str: str | None) -> torch.device:
+        """Get device, accounting for distributed training."""
+        if self.dist_config.strategy in ("ddp", "fsdp") and self.dist_config.is_initialized:
+            if torch.cuda.is_available():
+                device = torch.device(f"cuda:{self.dist_config.local_rank}")
+                torch.cuda.set_device(device)
+                return device
+        return torch.device(get_device(device_str))
 
     def fit(self) -> tuple:
         cfg = self.cfg
@@ -69,7 +95,13 @@ class Trainer:
 
         self.model = model_cls(vocab_size=vocab_size, cfg=cfg).to(self.device)
         n_params = count_parameters(self.model)
-        log_model_summary(self.model, title=f"model summary  variant={cfg.variant}")
+        
+        # Wrap model with parallelization strategy
+        self.model = wrap_model_parallel(self.model, self.dist_config, self.device)
+        
+        # Log model summary only on main process
+        if is_main_process(self.dist_config):
+            log_model_summary(self.model, title=f"model summary  variant={cfg.variant}")
 
         loader = self.data.train_loader()
         if len(loader) == 0:
@@ -78,32 +110,46 @@ class Trainer:
 
         self.schedule = TrainSchedule.from_config(cfg, len(loader))
         n_epochs, total_steps = self.schedule.n_epochs, self.schedule.total_steps
-        logger.info(
-            "starting train variant={} device={} epochs={} steps={} "
-            "batches/epoch={} lr={} batch_size={} loss_type={}",
-            cfg.variant,
-            self.device,
-            n_epochs,
-            total_steps,
-            len(loader),
-            cfg.train.lr,
-            cfg.train.batch_size,
-            cfg.train.loss_type,
-        )
-        logger.debug("full config: {}", cfg.model_dump())
+        
+        # Log training info only on main process
+        if is_main_process(self.dist_config):
+            logger.info(
+                "starting train variant={} device={} parallel_strategy={} world_size={} "
+                "epochs={} steps={} batches/epoch={} lr={} batch_size={} loss_type={}",
+                cfg.variant,
+                self.device,
+                cfg.train.parallel_strategy,
+                self.dist_config.world_size,
+                n_epochs,
+                total_steps,
+                len(loader),
+                cfg.train.lr,
+                cfg.train.batch_size,
+                cfg.train.loss_type,
+            )
+            logger.debug("full config: {}", cfg.model_dump())
 
         self.opt = torch.optim.AdamW(
             self.model.parameters(), lr=cfg.train.lr, weight_decay=cfg.train.weight_decay
         )
         self._maybe_resume(n_epochs)
 
-        self.writer = make_writer(
-            cfg.logging.tensorboard_dir,
-            enabled=cfg.logging.tensorboard,
-            run_name=None if cfg.experiment.enabled else cfg.variant,
+        # Initialize experiment logger (only main process logs)
+        run_name = None if cfg.experiment.enabled else cfg.variant
+        if cfg.experiment.enabled and cfg.experiment.name:
+            run_name = cfg.experiment.name
+        
+        self.logger = make_experiment_logger(
+            tensorboard_enabled=cfg.logging.tensorboard and is_main_process(self.dist_config),
+            tensorboard_dir=cfg.logging.tensorboard_dir,
+            wandb_enabled=cfg.logging.wandb and is_main_process(self.dist_config),
+            wandb_project=cfg.logging.wandb_project,
+            wandb_entity=cfg.logging.wandb_entity,
+            wandb_run_name=cfg.logging.wandb_run_name,
+            wandb_tags=cfg.logging.wandb_tags,
+            run_name=run_name,
         )
-        log_hparams(
-            self.writer,
+        self.logger.log_hparams(
             {
                 "variant": cfg.variant,
                 "lr": cfg.train.lr,
@@ -115,37 +161,49 @@ class Trainer:
                 "epochs": n_epochs,
                 "steps": total_steps,
                 "loss_type": cfg.train.loss_type,
+                "parallel_strategy": cfg.train.parallel_strategy,
+                "world_size": self.dist_config.world_size,
             },
         )
-        if self.writer is not None:
-            self.writer.add_text("config", str(cfg.model_dump()))
-            self.writer.add_scalar("model/n_params", float(n_params), 0)
+        self.logger.log_text("config", str(cfg.model_dump()))
+        self.logger.log_scalars(0, {"model/n_params": float(n_params)})
+        
+        # Watch model with W&B if enabled
+        if cfg.logging.wandb and cfg.logging.wandb_watch_model:
+            self.logger.watch_model(self.model, log_freq=cfg.logging.wandb_log_freq)
 
         self.losses = []
         try:
             self._run_epochs(loader, vocab_size)
         except Exception:
             logger.exception("training crashed at last_step={}", self.global_step)
-            if self.writer is not None:
-                self.writer.flush()
-                self.writer.close()
+            if self.logger is not None:
+                self.logger.close()
+            cleanup_distributed(self.dist_config)
             raise
 
-        self._save(epoch=n_epochs - 1, vocab_size=vocab_size)
-        logger.info("checkpoint saved to {}", cfg.train.checkpoint_path)
-        if self.writer is not None:
+        # Only main process saves checkpoint
+        if is_main_process(self.dist_config):
+            self._save(epoch=n_epochs - 1, vocab_size=vocab_size)
+            logger.info("checkpoint saved to {}", cfg.train.checkpoint_path)
+        
+        if self.logger is not None:
             if self.losses:
-                self.writer.add_scalar("train/final_loss", self.losses[-1], self.global_step)
-            self.writer.flush()
-            self.writer.close()
-            logger.debug("tensorboard writer closed")
-        logger.info(
-            "training finished variant={} epochs={} steps={} final_loss={:.4f}",
-            cfg.variant,
-            n_epochs,
-            self.global_step,
-            self.losses[-1] if self.losses else float("nan"),
-        )
+                self.logger.log_scalars(self.global_step, {"train/final_loss": self.losses[-1]})
+            self.logger.close()
+        
+        if is_main_process(self.dist_config):
+            logger.info(
+                "training finished variant={} epochs={} steps={} final_loss={:.4f}",
+                cfg.variant,
+                n_epochs,
+                self.global_step,
+                self.losses[-1] if self.losses else float("nan"),
+            )
+        
+        # Clean up distributed resources
+        cleanup_distributed(self.dist_config)
+        
         return self.model, self.tokenizer, self.losses
 
     def _maybe_resume(self, n_epochs: int) -> None:
@@ -154,33 +212,50 @@ class Trainer:
         self.start_epoch = 0
         self.global_step = 0
         if cfg.train.resume and self.checkpoints.exists(ckpt_path):
-            logger.info("resume=true; loading {}", ckpt_path)
+            if is_main_process(self.dist_config):
+                logger.info("resume=true; loading {}", ckpt_path)
             ckpt = self.checkpoints.load(ckpt_path, self.device)
-            self.model.load_state_dict(ckpt["model_state_dict"])
+            
+            # Handle DDP/FSDP wrapped models
+            model_to_load = self.model
+            if hasattr(self.model, "module"):
+                model_to_load = self.model.module
+            
+            model_to_load.load_state_dict(ckpt["model_state_dict"])
             if "optimizer_state_dict" in ckpt:
                 self.opt.load_state_dict(ckpt["optimizer_state_dict"])
-                logger.debug("restored optimizer state")
+                if is_main_process(self.dist_config):
+                    logger.debug("restored optimizer state")
             else:
-                logger.warning("checkpoint has no optimizer_state_dict; continuing with fresh optimizer")
+                if is_main_process(self.dist_config):
+                    logger.warning("checkpoint has no optimizer_state_dict; continuing with fresh optimizer")
             self.start_epoch = int(ckpt.get("epoch", -1)) + 1
             self.global_step = int(ckpt.get("step", 0))
-            logger.info("resumed from epoch={} step={}", self.start_epoch, self.global_step)
-            if self.start_epoch >= n_epochs:
-                logger.warning(
-                    "checkpoint epoch {} already past configured epochs={}; nothing to train. "
-                    "use --no-resume to start over",
-                    self.start_epoch,
-                    n_epochs,
-                )
+            if is_main_process(self.dist_config):
+                logger.info("resumed from epoch={} step={}", self.start_epoch, self.global_step)
+                if self.start_epoch >= n_epochs:
+                    logger.warning(
+                        "checkpoint epoch {} already past configured epochs={}; nothing to train. "
+                        "use --no-resume to start over",
+                        self.start_epoch,
+                        n_epochs,
+                    )
         elif cfg.train.resume:
-            logger.info("resume=true but no checkpoint at {}; starting from scratch", ckpt_path)
+            if is_main_process(self.dist_config):
+                logger.info("resume=true but no checkpoint at {}; starting from scratch", ckpt_path)
         else:
-            logger.info("resume=false; ignoring any checkpoint at {}", ckpt_path)
+            if is_main_process(self.dist_config):
+                logger.info("resume=false; ignoring any checkpoint at {}", ckpt_path)
 
     def _save(self, *, epoch: int, vocab_size: int) -> None:
+        # Extract model state from DDP/FSDP wrapper if needed
+        model_to_save = self.model
+        if hasattr(self.model, "module"):
+            model_to_save = self.model.module
+        
         self.checkpoints.save(
             self.cfg.train.checkpoint_path,
-            model_state_dict=self.model.state_dict(),
+            model_state_dict=model_to_save.state_dict(),
             optimizer_state_dict=self.opt.state_dict(),
             variant=self.cfg.variant,
             vocab_size=vocab_size,
@@ -221,8 +296,7 @@ class Trainer:
                 self.losses.append(loss.item())
                 epoch_losses.append(loss.item())
 
-                log_scalars(
-                    self.writer,
+                self.logger.log_scalars(
                     self.global_step,
                     {
                         "train/loss": loss.item(),
@@ -247,24 +321,35 @@ class Trainer:
                 self._maybe_visualize(tag=f"step{self.global_step}")
 
             epoch_mean = sum(epoch_losses) / max(len(epoch_losses), 1)
-            log_scalars(self.writer, epoch, {"train/epoch_loss": epoch_mean})
-            logger.info(
-                "epoch {}/{} done mean_loss={:.4f} steps_this_epoch={}",
-                epoch + 1,
-                n_epochs,
-                epoch_mean,
-                len(epoch_losses),
-            )
+            self.logger.log_scalars(epoch, {"train/epoch_loss": epoch_mean})
+            
+            if is_main_process(self.dist_config):
+                logger.info(
+                    "epoch {}/{} done mean_loss={:.4f} steps_this_epoch={}",
+                    epoch + 1,
+                    n_epochs,
+                    epoch_mean,
+                    len(epoch_losses),
+                )
+            
             if cfg.eval.every_n_epochs and (epoch + 1) % cfg.eval.every_n_epochs == 0:
                 eval_loader = self.data.val_loader(loader)
                 eval_metrics = self.evaluator.run(self.model, eval_loader)
-                log_scalars(
-                    self.writer,
+                
+                # Reduce metrics across all processes
+                eval_metrics = reduce_dict(eval_metrics, self.dist_config, average=True)
+                
+                self.logger.log_scalars(
                     epoch,
                     {f"eval/{k}": v for k, v in eval_metrics.items()},
                 )
-            self._maybe_visualize(tag=f"epoch{epoch + 1}", by_epoch=True)
-            if cfg.train.checkpoint_every_epoch:
+            
+            # Only main process does visualization
+            if is_main_process(self.dist_config):
+                self._maybe_visualize(tag=f"epoch{epoch + 1}", by_epoch=True)
+            
+            # Only main process saves checkpoints
+            if cfg.train.checkpoint_every_epoch and is_main_process(self.dist_config):
                 self._save(epoch=epoch, vocab_size=vocab_size)
 
     def _maybe_visualize(self, *, tag: str, by_epoch: bool = False) -> None:

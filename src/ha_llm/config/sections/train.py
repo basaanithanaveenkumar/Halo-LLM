@@ -19,3 +19,10 @@ class TrainConfig(StrictModel):
     focal_gamma: float = 2.0
     focal_alpha: float = 1.0
     label_smoothing: float = 0.1
+    
+    # Distributed training / data parallelism
+    parallel_strategy: Literal["none", "dp", "ddp", "fsdp"] = "none"
+    distributed_backend: str | None = None  # 'nccl', 'gloo', 'mpi' (auto-detected if None)
+    find_unused_parameters: bool = False  # DDP: find unused parameters
+    gradient_as_bucket_view: bool = True  # DDP: memory optimization
+    static_graph: bool = False  # DDP: static graph optimization

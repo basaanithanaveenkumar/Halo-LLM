@@ -1,0 +1,34 @@
+inherits: ../base.yaml
+variant: diffusion
+device: mps
+model:
+  arch: lgt            # lgt | dit | transformer
+  attn_type: bidirectional
+  attn_impl: gqa
+  n_kv_heads: 2
+  ffn_type: geglu
+  use_time_cond: true
+  max_length: 128
+train:
+  epochs: 2000
+  steps: null
+  batch_size: 24
+  lr: 0.0003
+eval:
+  every_n_epochs: 10
+viz:
+  every_n_steps: 500
+logging:
+  level: INFO
+  tensorboard: true
+  tensorboard_dir: data/tb
+  wandb: true
+  wandb_project: halodiffusion-llm
+  wandb_entity: null  # Set to your W&B username or team
+  wandb_run_name: null  # Auto-generated
+  wandb_tags:
+    - diffusion
+    - small
+    - baseline
+  wandb_watch_model: true
+  wandb_log_freq: 100
