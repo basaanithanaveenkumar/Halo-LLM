@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from ha_llm.config.schema import load_config
+from hale_llm.config.schema import load_config
 
 
 def test_bad_key_fails():
@@ -8,14 +8,14 @@ def test_bad_key_fails():
     from pydantic import ValidationError
 
     with pytest.raises(ValidationError):
-        from ha_llm.config.schema import RunConfig
+        from hale_llm.config.schema import RunConfig
 
         RunConfig.model_validate({"variant": "autoregressive", "model": {"not_a_field": 1}})
 
 
 def test_resolve_schedule_epochs_wins():
-    from ha_llm.config.schema import RunConfig
-    from ha_llm.training.trainer import resolve_schedule
+    from hale_llm.config.schema import RunConfig
+    from hale_llm.training.trainer import resolve_schedule
 
     cfg = RunConfig(variant="autoregressive", train={"epochs": 3, "steps": 999})
     n_epochs, total_steps = resolve_schedule(cfg, n_batches=10)
@@ -24,8 +24,8 @@ def test_resolve_schedule_epochs_wins():
 
 
 def test_resolve_schedule_steps_only():
-    from ha_llm.config.schema import RunConfig
-    from ha_llm.training.trainer import resolve_schedule
+    from hale_llm.config.schema import RunConfig
+    from hale_llm.training.trainer import resolve_schedule
 
     cfg = RunConfig(variant="autoregressive", train={"epochs": None, "steps": 25})
     n_epochs, total_steps = resolve_schedule(cfg, n_batches=10)

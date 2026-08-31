@@ -1,9 +1,9 @@
 # Library layout
 
-`ha_llm` is split so other projects (VLM, world models, custom LMs) can import pieces without the training CLI.
+`hale_llm` is split so other projects (VLM, world models, custom LMs) can import pieces without the training CLI.
 
 ```
-ha_llm/
+hale_llm/
   core/           components, transformer stacks, token backbones
   losses/         registered token losses (ce, focal, label_smoothing, kl)
   metrics/llm/    loss, perplexity, bits/token, accuracy, top-k
@@ -16,7 +16,7 @@ ha_llm/
 ## Losses
 
 ```python
-from ha_llm.losses import token_nll, register_token_loss, TOKEN_LOSSES
+from hale_llm.losses import token_nll, register_token_loss, TOKEN_LOSSES
 
 nll = token_nll(logits, targets, loss_type="focal", focal_gamma=2.0, reduction="mean")
 nll = token_nll(logits, targets, loss_type="label_smoothing", label_smoothing=0.1)
@@ -33,8 +33,8 @@ Variant losses (`@register_loss("diffusion")`) still live under `models_*`; they
 ## Metrics
 
 ```python
-from ha_llm.metrics.llm import LossMetric, PerplexityMetric, TokenAccuracyMetric, TopKAccuracyMetric
-from ha_llm.core.registry import register_metric
+from hale_llm.metrics.llm import LossMetric, PerplexityMetric, TokenAccuracyMetric, TopKAccuracyMetric
+from hale_llm.core.registry import register_metric
 
 @register_metric("my_metric")
 class MyMetric:
@@ -46,7 +46,7 @@ YAML `eval.metrics`: `loss`, `perplexity`, `bits_per_token`, `token_accuracy`, `
 ## Data
 
 ```python
-from ha_llm.dataloader import DataModule, sliding_windows, setup_tokenizer, register_collate
+from hale_llm.dataloader import DataModule, sliding_windows, setup_tokenizer, register_collate
 ```
 
 Sources: `dataloader/sources/huggingface.py`, `dataloader/sources/overfit.py`.
@@ -54,8 +54,19 @@ Sources: `dataloader/sources/huggingface.py`, `dataloader/sources/overfit.py`.
 ## Eval / inference
 
 ```python
-from ha_llm.evaluation import Evaluator, evaluate
-from ha_llm.inference import load_session, generate, encode_prompt
+from hale_llm.evaluation import Evaluator, evaluate
+from hale_llm.inference import load_session, generate, encode_prompt
 ```
 
 Core stacks (no tokenizer): see [core.md](core.md).
+
+## Registries
+
+Two primitives in `hale_llm.core.registry`:
+
+| Type | Use when | Examples |
+|---|---|---|
+| `NamedRegistry` | one config name maps to one implementation | model, loss, sampler, optimizer, collate, token loss, backbone, attention, ffn |
+| `VariantRegistry` | one config name may have variant-specific implementations | metrics (`loss` is generic; `masked_accuracy` differs per diffusion variant) |
+
+Training plugins register via decorators (`@register_variant`, `@register_loss`, …). Import `hale_llm.models` (or the relevant subpackage) so registration runs before lookup.

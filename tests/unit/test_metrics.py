@@ -2,11 +2,11 @@ import math
 
 import torch
 
-import ha_llm.models  # noqa: F401
-from ha_llm.config.schema import RunConfig
-from ha_llm.core.registry import instantiate_metrics
-from ha_llm.evaluation import evaluate
-from ha_llm.metrics import LossMetric, MetricContext, PerplexityMetric, TokenAccuracyMetric
+import hale_llm.models  # noqa: F401
+from hale_llm.config.schema import RunConfig
+from hale_llm.core.registry import instantiate_metrics
+from hale_llm.evaluation import evaluate
+from hale_llm.metrics import LossMetric, MetricContext, PerplexityMetric, TokenAccuracyMetric
 
 
 def test_instantiate_skips_inapplicable_metric():
@@ -71,8 +71,8 @@ def test_evaluate_returns_dict(tiny_tokenizer):
         logging={"tensorboard": False, "log_file": None, "level": "WARNING"},
         device="cpu",
     )
-    from ha_llm.core.registry import get_variant
-    from ha_llm.dataloader import make_overfit_loader
+    from hale_llm.core.registry import get_variant
+    from hale_llm.dataloader import make_overfit_loader
 
     model = get_variant("autoregressive")(vocab_size=len(tiny_tokenizer), cfg=cfg)
     loader = make_overfit_loader(

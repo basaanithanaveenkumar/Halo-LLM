@@ -1,4 +1,4 @@
 def test_import_package():
-    import halodiffusionllm
+    import hale_llm
 
-    assert halodiffusionllm.__version__ == "0.1.0"
+    assert hale_llm.__version__ == "0.1.0"

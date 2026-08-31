@@ -1,7 +1,7 @@
-import ha_llm.models  # noqa: F401
-from ha_llm.config.schema import RunConfig
-from ha_llm.core.registry import get_variant
-from ha_llm.inference import session_from_model
+import hale_llm.models  # noqa: F401
+from hale_llm.config.schema import RunConfig
+from hale_llm.core.registry import get_variant
+from hale_llm.inference import session_from_model
 
 
 def test_session_generate_returns_text(tiny_tokenizer):
@@ -26,7 +26,7 @@ def test_session_generate_returns_text(tiny_tokenizer):
 
 
 def test_load_session_falls_back_when_checkpoint_missing(tiny_tokenizer, tmp_path):
-    from ha_llm.inference import load_session
+    from hale_llm.inference import load_session
 
     cfg = RunConfig(
         variant="autoregressive",
@@ -42,7 +42,7 @@ def test_load_session_falls_back_when_checkpoint_missing(tiny_tokenizer, tmp_pat
 
 
 def test_load_session_explicit_missing_checkpoint_raises(tiny_tokenizer, tmp_path):
-    from ha_llm.inference import load_session
+    from hale_llm.inference import load_session
     import pytest
 
     cfg = RunConfig(

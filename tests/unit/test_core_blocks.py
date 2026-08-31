@@ -1,8 +1,8 @@
 import torch
 
-from ha_llm.core.backbones import TransformerBackbone
-from ha_llm.core.components.attention import build_attention, build_attn_mask
-from ha_llm.core.components.ffn import build_ffn
+from hale_llm.core.backbones import TransformerBackbone
+from hale_llm.core.components.attention import build_attention, build_attn_mask
+from hale_llm.core.components.ffn import build_ffn
 
 
 def test_gqa_and_mqa_forward():
@@ -23,7 +23,7 @@ def test_moe_forward_shape():
 
 
 def test_gpt_stack_hidden_states():
-    from ha_llm.core.transformers import GPTStack
+    from hale_llm.core.transformers import GPTStack
 
     stack = GPTStack(d_model=16, n_heads=4, n_layers=1, d_ff=32)
     h = torch.randn(2, 6, 16)

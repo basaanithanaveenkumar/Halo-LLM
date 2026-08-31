@@ -9,12 +9,12 @@ model:
   arch: lgt
 ```
 
-Schema lives in [`src/ha_llm/config/sections/`](../src/ha_llm/config/sections/) (one file per YAML block). [`RunConfig`](../src/ha_llm/config/run.py) composes them; [`load_config`](../src/ha_llm/config/load.py) handles YAML inheritance.
+Schema lives in [`src/hale_llm/config/sections/`](../src/hale_llm/config/sections/) (one file per YAML block). [`RunConfig`](../src/hale_llm/config/run.py) composes them; [`load_config`](../src/hale_llm/config/load.py) handles YAML inheritance.
 
 Pass a file to the CLI:
 
 ```bash
-uv run ha-llm-train --config configs/block_diffusion/small.yaml --no-resume --viz
+uv run hale-llm-train --config configs/block_diffusion/small.yaml --no-resume --viz
 ```
 
 CLI flags (`--epochs`, `--steps`, `--resume`, `--prompt`, `--experiment`) override YAML after load.
@@ -215,7 +215,7 @@ data:
 
 ## `sample`
 
-Used by `ha-llm-sample`, `ha-llm-viz`, and training GIFs (viz can shorten `sampling_steps`).
+Used by `hale-llm-sample`, `hale-llm-viz`, and training GIFs (viz can shorten `sampling_steps`).
 
 | Key | Type | Default (schema / `base.yaml`) | How to use |
 |---|---|---|---|
@@ -231,7 +231,7 @@ Used by `ha-llm-sample`, `ha-llm-viz`, and training GIFs (viz can shorten `sampl
 
 | Key | Type | Default | How to use |
 |---|---|---|---|
-| `metrics` | list of strings | `loss`, `perplexity`, `bits_per_token`, `token_accuracy`, `masked_accuracy` | Names from the metric registry. LLM metrics live in `ha_llm.metrics.llm` (`topk_accuracy` is optional). Unknown names error. CLI `ha-llm-eval --metrics loss,perplexity`. |
+| `metrics` | list of strings | `loss`, `perplexity`, `bits_per_token`, `token_accuracy`, `masked_accuracy` | Names from the metric registry. LLM metrics live in `hale_llm.metrics.llm` (`topk_accuracy` is optional). Unknown names error. CLI `hale-llm-eval --metrics loss,perplexity`. |
 | `every_n_epochs` | int \| `null` | `1` / `10` | Run eval during training. `null` skips periodic eval. Block diffusion `small.yaml` uses `1`. |
 | `max_batches` | int \| `null` | `null` | Cap val batches. `null` = full val loader. Set e.g. `20` to speed training. |
 
@@ -246,7 +246,7 @@ Training GIFs go to the experiment `viz/` folder (layout overrides `output_dir`)
 | `enabled` | bool | `false` / `true` | Master switch. CLI `--viz` / `--no-viz`. |
 | `every_n_steps` | int \| `null` | `500` / `50` | GIF every N optimizer steps. `null` disables step-based GIFs. Cheap: `500`. Frequent: `50`. |
 | `every_n_epochs` | int \| `null` | `null` | Extra GIF at epoch boundaries. |
-| `sampling_steps` | int \| `null` | `8` | Denoise steps **inside training GIFs** (keep small). `ha-llm-viz` uses `sample.sampling_steps`. |
+| `sampling_steps` | int \| `null` | `8` | Denoise steps **inside training GIFs** (keep small). `hale-llm-viz` uses `sample.sampling_steps`. |
 | `max_new_tokens` | int \| `null` | `null` | Override generation length for GIFs. `null` → `sample.max_new_tokens`. |
 | `prompt_source` | `dataset` \| `config` | `dataset` | `dataset` = prefix from validation paragraphs. `config` = `sample.prompt`. `--prompt` forces config. |
 | `prompt_words` | int | `8` | Words taken from a validation passage. |
@@ -259,7 +259,7 @@ Training GIFs go to the experiment `viz/` folder (layout overrides `output_dir`)
 | Key | Type | Default | How to use |
 |---|---|---|---|
 | `level` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` | `INFO` | Loguru level. CLI `--log-level`. |
-| `log_file` | string \| `null` | `logs/ha_llm.log` | Redirected to `.../logs/train.log` under the experiment. `null` = stderr only. |
+| `log_file` | string \| `null` | `logs/hale_llm.log` | Redirected to `.../logs/train.log` under the experiment. `null` = stderr only. |
 | `tensorboard` | bool | `true` | Write scalars. |
 | `tensorboard_dir` | string | `runs` | Redirected to the run `tb/`. `tensorboard --logdir data/experiments`. |
 
@@ -315,9 +315,9 @@ model:
 
 | Command | Required | Useful flags |
 |---|---|---|
-| `ha-llm-train` | `--config` | `--no-resume` new run; `--resume` / `--experiment NAME`; `--epochs` / `--steps`; `--viz` |
-| `ha-llm-sample` | `--config` | `--experiment`, `--prompt`, `--checkpoint` |
-| `ha-llm-eval` | `--config` | `--experiment`, `--metrics a,b` |
-| `ha-llm-viz` | `--config` | `--experiment`, `--prompt`, `--output` |
+| `hale-llm-train` | `--config` | `--no-resume` new run; `--resume` / `--experiment NAME`; `--epochs` / `--steps`; `--viz` |
+| `hale-llm-sample` | `--config` | `--experiment`, `--prompt`, `--checkpoint` |
+| `hale-llm-eval` | `--config` | `--experiment`, `--metrics a,b` |
+| `hale-llm-viz` | `--config` | `--experiment`, `--prompt`, `--output` |
 
 Sample / eval / viz attach to `latest` unless `--experiment` is set. They do not create a new run folder.

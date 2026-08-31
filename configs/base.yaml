@@ -65,7 +65,7 @@ viz:
   output_dir: data/viz
 logging:
   level: INFO
-  log_file: data/logs/ha_llm.log
+  log_file: data/logs/hale_llm.log
   tensorboard: true
   tensorboard_dir: data/tb
   wandb: false

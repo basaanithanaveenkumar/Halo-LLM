@@ -1,9 +1,10 @@
 import torch
 
-import ha_llm.models  # noqa: F401
-from ha_llm.core.registry import MODELS, get_model
-from ha_llm.core.backbones import TransformerBackbone
-from ha_llm.core.components import build_attn_mask
+import hale_llm.core.optimizers  # noqa: F401
+import hale_llm.models  # noqa: F401
+from hale_llm.core.registry import MODELS, get_model, get_optimizer
+from hale_llm.core.backbones import TransformerBackbone
+from hale_llm.core.components import build_attn_mask
 
 
 def test_registry_has_all_models():
@@ -32,7 +33,7 @@ def test_backbone_causal_forward():
 def test_format_model_summary_lists_modules():
     import torch.nn as nn
 
-    from ha_llm.core.tensors import format_model_summary
+    from hale_llm.core.tensors import format_model_summary
 
     class Wrapper(nn.Module):
         def __init__(self):
@@ -51,3 +52,26 @@ def test_get_model_unknown():
         assert False
     except KeyError:
         pass
+
+
+def test_optimizer_registry_has_builtins():
+    from hale_llm.core.registry import OPTIMIZERS
+
+    assert {"adam", "adamw", "sgd", "muon"} <= set(OPTIMIZERS)
+    assert get_optimizer("adamw") is get_optimizer("AdamW")
+
+
+def test_build_adamw_has_torch_api():
+    import torch.nn as nn
+
+    from hale_llm.core.optimizers import build_optimizer
+
+    model = nn.Linear(4, 2)
+    opt = build_optimizer("adamw", model.parameters(), {"lr": 1e-3, "weight_decay": 0.0})
+    loss = model(torch.ones(3, 4)).sum()
+    opt.zero_grad(set_to_none=True)
+    loss.backward()
+    opt.step()
+    assert "lr" in opt.param_groups[0]
+    state = opt.state_dict()
+    opt.load_state_dict(state)

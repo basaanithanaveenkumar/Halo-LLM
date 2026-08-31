@@ -1,11 +1,11 @@
 import torch
 
-from ha_llm.config.schema import RunConfig
-from ha_llm.losses.token import model_token_nll, token_nll
+from hale_llm.config.schema import RunConfig
+from hale_llm.losses.token import model_token_nll, token_nll
 
 
 def test_label_smoothing_is_registered():
-    from ha_llm.losses import TOKEN_LOSSES, token_nll
+    from hale_llm.losses import TOKEN_LOSSES, token_nll
 
     assert set(TOKEN_LOSSES) >= {"ce", "focal", "label_smoothing", "kl"}
     logits = torch.randn(1, 3, 5)

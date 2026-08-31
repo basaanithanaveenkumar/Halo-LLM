@@ -42,7 +42,7 @@ class TinyTokenizer:
 
 @pytest.fixture(autouse=True)
 def _quiet_logging():
-    from ha_llm.utils.logging import setup_logging
+    from hale_llm.utils.logging import setup_logging
 
     setup_logging(level="WARNING", log_file=None, force=True)
 

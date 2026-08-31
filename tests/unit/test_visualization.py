@@ -1,7 +1,7 @@
 import numpy as np
 
-from ha_llm.visualization.block_diffusion import render_block_diffusion_gif
-from ha_llm.visualization.unmasking import render_token_grid_gif, render_unmasking_gif
+from hale_llm.visualization.block_diffusion import render_block_diffusion_gif
+from hale_llm.visualization.unmasking import render_token_grid_gif, render_unmasking_gif
 
 
 class _Tok:

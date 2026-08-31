@@ -1,9 +1,9 @@
 import torch
 
-from ha_llm.config.schema import load_config
-from ha_llm.core.backbones.lgt import LGTBackbone
-from ha_llm.core.components.attention import sliding_window_mask
-from ha_llm.core.transformers.lgt import is_global_layer
+from hale_llm.config.schema import load_config
+from hale_llm.core.backbones.lgt import LGTBackbone
+from hale_llm.core.components.attention import sliding_window_mask
+from hale_llm.core.transformers.lgt import is_global_layer
 from pathlib import Path
 
 

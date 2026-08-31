@@ -1,6 +1,6 @@
 <div align="center">
 
-# ha-llm
+# hale-llm
 
 Compare **autoregressive**, **masked diffusion**, **block diffusion**, and **flow matching** on one transformer backbone.
 
@@ -18,7 +18,7 @@ Compare **autoregressive**, **masked diffusion**, **block diffusion**, and **flo
   <img src="https://img.shields.io/badge/python-3.12+-3776AB?logo=python&logoColor=white" alt="Python 3.12+">
   <img src="https://img.shields.io/badge/pytorch-2.13+-EE4C2C?logo=pytorch&logoColor=white" alt="PyTorch">
   <img src="https://img.shields.io/badge/tokenizer-GPT--2-yellow" alt="GPT-2 tokenizer">
-  <img src="https://img.shields.io/badge/package-ha__llm-0A7A3E" alt="ha_llm">
+  <img src="https://img.shields.io/badge/package-hale__llm-0A7A3E" alt="hale_llm">
 </p>
 
 ---
@@ -36,7 +36,7 @@ The decoder is a small library: **components** (attention, FFN, layers), **trans
 | FFN | `mlp` · `geglu` · DeepSeek-style `moe` |
 | Token loss | `ce` · `focal` |
 
-Shared core (`core/`, `dataloader/`, `training/`, `inference/`, `metrics/`) never imports a `models_*` package by name. Each paradigm lives in `src/ha_llm/models/models_<name>/` and registers with `@register_model` / `@register_loss` / `@register_sampler` / `@register_metric`.
+Shared core (`core/`, `dataloader/`, `training/`, `inference/`, `metrics/`) never imports a `models_*` package by name. Each paradigm lives in `src/hale_llm/models/models_<name>/` and registers with `@register_model` / `@register_loss` / `@register_sampler` / `@register_metric`.
 
 ---
 
@@ -51,15 +51,15 @@ uv run pytest tests/unit -q
 Train block diffusion on full WikiText-2 (MPS / CUDA via `device` in YAML):
 
 ```bash
-uv run ha-llm-train --config configs/block_diffusion/small.yaml --no-resume --viz
+uv run hale-llm-train --config configs/block_diffusion/small.yaml --no-resume --viz
 ```
 
 Sample, eval, and write a GIF from `latest` or a named run:
 
 ```bash
-uv run ha-llm-sample --config configs/block_diffusion/small.yaml
-uv run ha-llm-eval --config configs/block_diffusion/small.yaml
-uv run ha-llm-viz --config configs/block_diffusion/small.yaml
+uv run hale-llm-sample --config configs/block_diffusion/small.yaml
+uv run hale-llm-eval --config configs/block_diffusion/small.yaml
+uv run hale-llm-viz --config configs/block_diffusion/small.yaml
 tensorboard --logdir data/experiments
 ```
 
@@ -143,8 +143,8 @@ Every key, type, default, and recipe: **[docs/config.md](docs/config.md)**.
 
 ## Adding a paradigm
 
-1. New folder `src/ha_llm/models/models_<name>/` with model, loss, sampler (and optional metric).
-2. One import in `src/ha_llm/models/__init__.py`.
+1. New folder `src/hale_llm/models/models_<name>/` with model, loss, sampler (and optional metric).
+2. One import in `src/hale_llm/models/__init__.py`.
 3. One YAML under `configs/<name>/`.
 
 Public facades stay the same: `train()`, `evaluate()`, `load_session()`.

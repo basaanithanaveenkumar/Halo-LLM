@@ -2,9 +2,9 @@ from pathlib import Path
 
 import pytest
 
-import ha_llm.models  # noqa: F401
-from ha_llm.config.schema import load_config
-from ha_llm.training.trainer import train
+import hale_llm.models  # noqa: F401
+from hale_llm.config.schema import load_config
+from hale_llm.training.trainer import train
 
 REPO = Path(__file__).resolve().parents[2]
 

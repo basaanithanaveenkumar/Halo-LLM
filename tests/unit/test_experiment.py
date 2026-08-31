@@ -3,8 +3,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from ha_llm.config.experiment import apply_experiment_layout
-from ha_llm.config.schema import RunConfig
+from hale_llm.config.experiment import apply_experiment_layout
+from hale_llm.config.schema import RunConfig
 
 
 def _cfg(tmp_path: Path, **kwargs) -> RunConfig:

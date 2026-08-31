@@ -1,5 +1,5 @@
-from ha_llm.utils.logging import setup_logging
-from ha_llm.utils.tensorboard import log_scalars, make_writer
+from hale_llm.utils.logging import setup_logging
+from hale_llm.utils.tensorboard import log_scalars, make_writer
 
 
 def test_setup_logging_levels(tmp_path):

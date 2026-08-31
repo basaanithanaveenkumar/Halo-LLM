@@ -1,9 +1,9 @@
 import torch
 
-from ha_llm.config.schema import ModelConfig
-from ha_llm.core.backbones import BACKBONES, TransformerBackbone, build_backbone
-from ha_llm.core.backbones.dit import DiTBackbone
-from ha_llm.core.components import DiTBlock, build_attention, build_ffn
+from hale_llm.config.schema import ModelConfig
+from hale_llm.core.backbones import BACKBONES, TransformerBackbone, build_backbone
+from hale_llm.core.backbones.dit import DiTBackbone
+from hale_llm.core.components import DiTBlock, build_attention, build_ffn
 
 
 def test_backbone_registry():

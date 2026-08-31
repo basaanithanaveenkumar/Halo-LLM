@@ -1,6 +1,6 @@
 import torch
 
-from ha_llm.dataloader.dataset import sliding_windows
+from hale_llm.dataloader.dataset import sliding_windows
 
 
 class _WordTok:
@@ -50,8 +50,8 @@ def test_stride_words_must_be_positive():
 
 
 def test_uses_overfit_from_source_or_text():
-    from ha_llm.config.schema import RunConfig
-    from ha_llm.dataloader.dataset import uses_overfit
+    from hale_llm.config.schema import RunConfig
+    from hale_llm.dataloader.dataset import uses_overfit
 
     hf = RunConfig(variant="autoregressive", data={"source": "huggingface", "overfit_text": None})
     assert not uses_overfit(hf)
@@ -62,8 +62,8 @@ def test_uses_overfit_from_source_or_text():
 
 
 def test_passage_prompt_takes_prefix():
-    from ha_llm.config.schema import RunConfig
-    from ha_llm.dataloader.dataset import _is_heading, dataset_prompt, passage_prompt
+    from hale_llm.config.schema import RunConfig
+    from hale_llm.dataloader.dataset import _is_heading, dataset_prompt, passage_prompt
 
     assert _is_heading("= Game =")
     assert not _is_heading("The game was released in 1991.")

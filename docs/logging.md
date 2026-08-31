@@ -24,7 +24,7 @@ logging:
 **Usage:**
 ```bash
 # Start training with TensorBoard
-ha-llm-train --config configs/diffusion/small.yaml
+hale-llm-train --config configs/diffusion/small.yaml
 
 # View logs in browser
 tensorboard --logdir data/tb
@@ -62,7 +62,7 @@ pip install wandb
 wandb login
 
 # Start training with W&B
-ha-llm-train --config configs/diffusion/small.yaml
+hale-llm-train --config configs/diffusion/small.yaml
 ```
 
 ## Configuration Options
@@ -92,7 +92,7 @@ ha-llm-train --config configs/diffusion/small.yaml
 ```yaml
 logging:
   level: INFO
-  log_file: data/logs/ha_llm.log
+  log_file: data/logs/hale_llm.log
   tensorboard: true
   tensorboard_dir: data/tb
   wandb: false
@@ -102,7 +102,7 @@ logging:
 ```yaml
 logging:
   level: INFO
-  log_file: data/logs/ha_llm.log
+  log_file: data/logs/hale_llm.log
   tensorboard: false
   wandb: true
   wandb_project: "halodiffusion-llm"
@@ -114,7 +114,7 @@ logging:
 ```yaml
 logging:
   level: INFO
-  log_file: data/logs/ha_llm.log
+  log_file: data/logs/hale_llm.log
   tensorboard: true
   tensorboard_dir: data/tb
   wandb: true
@@ -179,12 +179,12 @@ Both backends automatically log:
 ### Override W&B Settings via CLI
 ```bash
 # Enable W&B for a single run
-ha-llm-train --config configs/diffusion/small.yaml \
+hale-llm-train --config configs/diffusion/small.yaml \
   --wandb-project "my-project" \
   --wandb-entity "my-team"
 
 # Disable logging
-ha-llm-train --config configs/diffusion/small.yaml \
+hale-llm-train --config configs/diffusion/small.yaml \
   --no-tensorboard \
   --no-wandb
 ```
@@ -245,10 +245,10 @@ logging:
 
 ## API Reference
 
-See `src/ha_llm/utils/experiment_logger.py` for the full API:
+See `src/hale_llm/utils/experiment_logger.py` for the full API:
 
 ```python
-from ha_llm.utils.experiment_logger import make_experiment_logger
+from hale_llm.utils.experiment_logger import make_experiment_logger
 
 logger = make_experiment_logger(
     tensorboard_enabled=True,

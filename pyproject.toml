@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ha-llm"
+name = "hale-llm"
 version = "0.1.0"
 description = "Research codebase for comparing language-model paradigms on a shared transformer foundation"
 readme = "README.md"
@@ -34,13 +34,13 @@ flash = [
 ]
 
 [project.scripts]
-ha-llm-train = "ha_llm.cli.train:main"
-ha-llm-sample = "ha_llm.cli.sample:main"
-ha-llm-eval = "ha_llm.cli.eval:main"
-ha-llm-viz = "ha_llm.cli.visualize:main"
+hale-llm-train = "hale_llm.cli.train:main"
+hale-llm-sample = "hale_llm.cli.sample:main"
+hale-llm-eval = "hale_llm.cli.eval:main"
+hale-llm-viz = "hale_llm.cli.visualize:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ha_llm"]
+packages = ["src/hale_llm"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
