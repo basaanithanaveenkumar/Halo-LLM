@@ -1,5 +1,17 @@
 # Library layout
 
+Install the core blocks library in any project:
+
+```bash
+uv add "hale-blocks @ git+https://github.com/basaanithanaveenkumar/HaleBlocks.git"
+```
+
+Install the full training stack:
+
+```bash
+uv add "hale-llm @ git+https://github.com/basaanithanaveenkumar/HaloDiffusionLLM.git"
+```
+
 `hale_llm` is split so other projects (VLM, world models, custom LMs) can import pieces without the training CLI.
 
 ```
@@ -62,11 +74,29 @@ Core stacks (no tokenizer): see [core.md](core.md).
 
 ## Registries
 
-Two primitives in `hale_llm.core.registry`:
+Two primitives in `hale_core.registry` (from **hale-blocks**):
 
 | Type | Use when | Examples |
 |---|---|---|
-| `NamedRegistry` | one config name maps to one implementation | model, loss, sampler, optimizer, collate, token loss, backbone, attention, ffn |
-| `VariantRegistry` | one config name may have variant-specific implementations | metrics (`loss` is generic; `masked_accuracy` differs per diffusion variant) |
+| `NamedRegistry` | one config name maps to one implementation | model, loss, sampler, optimizer, config, logger, trainer, token loss, backbone, attention, ffn |
+| `VariantRegistry` | one config name may have variant-specific implementations | metrics |
 
-Training plugins register via decorators (`@register_variant`, `@register_loss`, …). Import `hale_llm.models` (or the relevant subpackage) so registration runs before lookup.
+## `hale_core` layout (HaleBlocks)
+
+```text
+registry/    plugin infrastructure
+config/      RunConfig + YAML loading
+logging/     loguru + experiment backends
+training/    Trainer, schedule, distributed
+nn/
+  layers/    attention, FFN, norm, embeddings
+  stacks/    GPT, LGT, DiT depth modules
+  backbones/ token models
+  losses/    token losses
+  optim/     optimizer wrappers
+runtime/     checkpoint, tensors, device
+```
+
+Training plugins in `hale_llm` register via `@register_variant`, `@register_loss`, … Import `hale_llm.models` so registration runs before lookup.
+
+`hale_llm.core` is a thin compatibility namespace over `hale_core` (install **`hale-blocks`**).

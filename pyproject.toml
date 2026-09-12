@@ -9,6 +9,7 @@ description = "Research codebase for comparing language-model paradigms on a sha
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "hale-blocks",
     "datasets>=5.0.0",
     "huggingface-hub>=1.23.0",
     "matplotlib>=3.11.1",
@@ -38,6 +39,9 @@ hale-llm-train = "hale_llm.cli.train:main"
 hale-llm-sample = "hale_llm.cli.sample:main"
 hale-llm-eval = "hale_llm.cli.eval:main"
 hale-llm-viz = "hale_llm.cli.visualize:main"
+
+[tool.uv.sources]
+hale-blocks = { git = "https://github.com/basaanithanaveenkumar/HaleBlocks.git" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/hale_llm"]
